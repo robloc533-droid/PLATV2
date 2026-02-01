@@ -1,0 +1,168 @@
+-------------------------------------------------
+-- SERVICES
+-------------------------------------------------
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+-------------------------------------------------
+-- ORIGINAL FOLLOW PLATFORM (UNCHANGED)
+-------------------------------------------------
+local platformEnabled = false
+local platformPart
+local platformConnection
+
+local function togglePlatform()
+	platformEnabled = not platformEnabled
+
+	if platformEnabled then
+		platformPart = Instance.new("Part")
+		platformPart.Size = Vector3.new(10, 1, 10)
+		platformPart.Anchored = true
+		platformPart.CanCollide = true
+		platformPart.Massless = true
+		platformPart.Material = Enum.Material.SmoothPlastic
+		platformPart.Color = Color3.fromRGB(40, 40, 40)
+		platformPart.Parent = workspace
+
+		platformConnection = RunService.Heartbeat:Connect(function(dt)
+			local char = player.Character
+			local hrp = char and char:FindFirstChild("HumanoidRootPart")
+			if hrp and platformPart then
+				local targetPos = hrp.Position - Vector3.new(0, 4, 0)
+				local alpha = 1 - math.exp(-dt * 12)
+				platformPart.Position = platformPart.Position:Lerp(targetPos, alpha)
+			end
+		end)
+
+	else
+		if platformConnection then
+			platformConnection:Disconnect()
+			platformConnection = nil
+		end
+		if platformPart then
+			platformPart:Destroy()
+			platformPart = nil
+		end
+	end
+end
+
+-------------------------------------------------
+-- UI FROM LOCKED PLATFORM SCRIPT (ONLY UI)
+-------------------------------------------------
+
+local playerGui = player:WaitForChild("PlayerGui")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "GuvvyGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 80)
+frame.Position = UDim2.new(0.5, -100, 0.7, 0)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Parent = screenGui
+
+local frameCorner = Instance.new("UICorner")
+frameCorner.CornerRadius = UDim.new(0, 16)
+frameCorner.Parent = frame
+
+local frameStroke = Instance.new("UIStroke")
+frameStroke.Color = Color3.fromRGB(80,170,255)
+frameStroke.Thickness = 1.5
+frameStroke.Transparency = 0.2
+frameStroke.Parent = frame
+
+-- CREDIT
+local credit = Instance.new("TextLabel")
+credit.Size = UDim2.new(1, -10, 0, 14)
+credit.Position = UDim2.new(0, 5, 0, 2)
+credit.BackgroundTransparency = 1
+credit.Text = "made by dc: luni010_"
+credit.TextColor3 = Color3.fromRGB(180, 180, 180)
+credit.Font = Enum.Font.SourceSans
+credit.TextSize = 12
+credit.TextXAlignment = Enum.TextXAlignment.Center
+credit.Parent = frame
+
+-- BUTTON
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(1, -10, 0, 36)
+button.Position = UDim2.new(0, 5, 0, 18)
+button.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+button.TextColor3 = Color3.new(1, 1, 1)
+button.Font = Enum.Font.SourceSansBold
+button.TextSize = 18
+button.Text = "PLATV2 OFF"
+button.Parent = frame
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 12)
+btnCorner.Parent = button
+
+-- DISCORD
+local discord = Instance.new("TextLabel")
+discord.Size = UDim2.new(1, -10, 0, 14)
+discord.Position = UDim2.new(0, 5, 0, 58)
+discord.BackgroundTransparency = 1
+discord.Text = "discord.gg/pjuj99ure5"
+discord.TextColor3 = Color3.fromRGB(150, 150, 150)
+discord.Font = Enum.Font.SourceSans
+discord.TextSize = 12
+discord.TextXAlignment = Enum.TextXAlignment.Center
+discord.Parent = frame
+
+-------------------------------------------------
+-- DRAG UI
+-------------------------------------------------
+local dragging, dragStart, startPos
+
+frame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+frame.InputChanged:Connect(function(input)
+	if dragging and (
+		input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch
+	) then
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+-------------------------------------------------
+-- BUTTON → ORIGINAL PLATFORM
+-------------------------------------------------
+button.MouseButton1Click:Connect(function()
+	togglePlatform()
+
+	if platformEnabled then
+		button.Text = "PLATV2 ON"
+		button.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+	else
+		button.Text = "PLATV2 OFF"
+		button.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+	end
+end)
